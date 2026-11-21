@@ -39,6 +39,8 @@
   .button { display: inline-block; padding: 10px 16px; border-radius: 10px; background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; font-size: 15px; }
   .button.quiet { background: transparent; color: var(--ink); border: 1px solid var(--line); }
   .small { font-size: 14px; }
+  .cmd { margin: 0 0 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
   a { color: inherit; }
   footer { max-width: 720px; width: 100%; margin: 0 auto; padding: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
 </style>
@@ -53,11 +55,9 @@
     <div>Время начала: <span class="old">09:00</span> → <span class="new">21:00</span></div>
     <div>Лимит в день: <span class="old">5 000</span> → <span class="new">20 000</span></div>
   </div>
-  <div class="get">
-    <a class="button" href="https://github.com/baibesh/auditbox-site/releases/download/v0.1.2/auditbox-0.1.2-linux-x86_64.tar.gz">Скачать для Linux x86_64</a>
-    <a class="button quiet" href="https://github.com/baibesh/auditbox-site/releases/download/v0.1.2/auditbox-0.1.2-linux-aarch64.tar.gz">Linux ARM</a>
-  </div>
-  <p class="small">Версия 0.1.2, предварительный выпуск. Один файл программы, нужен PostgreSQL 14 или новее. Инструкция по установке лежит в архиве; контрольные суммы и прошлые версии - на странице <a href="https://github.com/baibesh/auditbox-site/releases">выпусков</a>.</p>
+  <p class="small" style="margin-bottom:8px">Установка на сервер Linux, одна команда:</p>
+  <pre class="cmd"><code>curl -fsSL https://baibesh.github.io/auditbox-site/install.sh | sudo sh</code></pre>
+  <p class="small">Вопросов команда не задаёт: ставит программу и базу и печатает ссылку. Администратор и первая система создаются в браузере. Если у сервера есть имя, добавьте <code>-s -- --domain audit.example.kz</code>, и HTTPS настроится сразу. Версия 0.2.0; файлы и прошлые версии - на странице <a href="https://github.com/baibesh/auditbox-site/releases">выпусков</a>.</p>
 </main>
 <footer>
   <span>AuditBox</span>
