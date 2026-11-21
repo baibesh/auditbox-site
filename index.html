@@ -35,6 +35,10 @@
   .old { background: var(--old-bg); color: var(--old); }
   .new { background: var(--new-bg); color: var(--new); }
   .soon { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; color: var(--muted); }
+  .get { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
+  .button { display: inline-block; padding: 10px 16px; border-radius: 10px; background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; font-size: 15px; }
+  .button.quiet { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .small { font-size: 14px; }
   a { color: inherit; }
   footer { max-width: 720px; width: 100%; margin: 0 auto; padding: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
 </style>
@@ -49,8 +53,11 @@
     <div>Время начала: <span class="old">09:00</span> → <span class="new">21:00</span></div>
     <div>Лимит в день: <span class="old">5 000</span> → <span class="new">20 000</span></div>
   </div>
-  <p><span class="soon">В разработке</span></p>
-  <p>Загрузки появятся на странице <a href="https://github.com/baibesh/auditbox-site/releases">выпусков</a>.</p>
+  <div class="get">
+    <a class="button" href="https://github.com/baibesh/auditbox-site/releases/download/v0.1.0/auditbox-0.1.0-linux-x86_64.tar.gz">Скачать для Linux x86_64</a>
+    <a class="button quiet" href="https://github.com/baibesh/auditbox-site/releases/download/v0.1.0/auditbox-0.1.0-linux-aarch64.tar.gz">Linux ARM</a>
+  </div>
+  <p class="small">Версия 0.1.0, предварительный выпуск. Один файл программы, нужен PostgreSQL 14 или новее. Инструкция по установке лежит в архиве; контрольные суммы и прошлые версии - на странице <a href="https://github.com/baibesh/auditbox-site/releases">выпусков</a>.</p>
 </main>
 <footer>
   <span>AuditBox</span>
