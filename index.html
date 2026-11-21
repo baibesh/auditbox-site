@@ -4,64 +4,52 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AuditBox - журнал изменений настроек</title>
-<meta name="description" content="AuditBox - коробочный журнал аудита: кто, когда и что изменил в настройках вашей системы.">
-<style>
-  :root {
-    --bg: #faf9f6; --ink: #17171a; --muted: #6b6b70; --line: #e3e1da;
-    --old-bg: #fbe9e7; --old: #9c2b1c; --new-bg: #e6f3e6; --new: #1f6b2c;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141416; --ink: #f1f0ec; --muted: #9a9aa0; --line: #2c2c31;
-      --old-bg: #3a1c18; --old: #f0a79b; --new-bg: #17321c; --new: #9fd8a8;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; min-height: 100vh; display: flex; flex-direction: column;
-    background: var(--bg); color: var(--ink);
-    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  }
-  main { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 72px 20px 40px; }
-  .mark { font: 600 15px/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .02em; }
-  h1 { font-size: clamp(32px, 6vw, 48px); line-height: 1.12; margin: 40px 0 16px; font-weight: 650; letter-spacing: -.02em; }
-  p { margin: 0 0 16px; color: var(--muted); max-width: 56ch; }
-  .diff {
-    margin: 36px 0; padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px;
-    font: 14px/1.9 ui-monospace, SFMono-Regular, Menlo, monospace; overflow-x: auto; white-space: nowrap;
-  }
-  .diff .who { color: var(--muted); }
-  .old, .new { padding: 2px 7px; border-radius: 5px; }
-  .old { background: var(--old-bg); color: var(--old); }
-  .new { background: var(--new-bg); color: var(--new); }
-  .soon { display: inline-block; padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; color: var(--muted); }
-  .get { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 14px; }
-  .button { display: inline-block; padding: 10px 16px; border-radius: 10px; background: var(--ink); color: var(--bg); text-decoration: none; font-weight: 600; font-size: 15px; }
-  .button.quiet { background: transparent; color: var(--ink); border: 1px solid var(--line); }
-  .small { font-size: 14px; }
-  .cmd { margin: 0 0 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
-  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .92em; }
-  a { color: inherit; }
-  footer { max-width: 720px; width: 100%; margin: 0 auto; padding: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
-</style>
+<meta name="description" content="AuditBox - коробочный журнал аудита: кто, когда и что изменил в настройках вашей системы. Ставится на ваш сервер одной командой.">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
+<header class="top">
+  <a class="mark" href="./">AuditBox</a>
+  <nav class="top"><a href="guide.html">Руководство</a><a href="https://github.com/baibesh/auditbox-site/releases">Выпуски</a></nav>
+</header>
 <main>
-  <div class="mark">AuditBox</div>
   <h1>Кто, когда и что изменил в настройках</h1>
-  <p>AuditBox - коробочный журнал аудита. Он ставится на ваш сервер, записывает каждое изменение настроек с автором, временем, старым и новым значением и не даёт переписать историю.</p>
+  <p class="lead">AuditBox - коробочный журнал аудита. Он ставится на ваш сервер, записывает каждое изменение настроек с автором, временем, старым и новым значением и не даёт переписать историю.</p>
+
   <div class="diff" aria-label="Пример записи журнала">
     <div class="who">21 ноя, 14:14 · a.ivanov · кампания «Осень»</div>
     <div>Время начала: <span class="old">09:00</span> → <span class="new">21:00</span></div>
     <div>Лимит в день: <span class="old">5 000</span> → <span class="new">20 000</span></div>
   </div>
-  <p class="small" style="margin-bottom:8px">Установка на сервер Linux, одна команда:</p>
+
+  <h2 id="install">Установка: одна команда</h2>
   <pre class="cmd"><code>curl -fsSL https://baibesh.github.io/auditbox-site/install.sh | sudo sh</code></pre>
-  <p class="small">Вопросов команда не задаёт: ставит программу и базу и печатает ссылку. Администратор и первая система создаются в браузере. Если у сервера есть имя, добавьте <code>-s -- --domain audit.example.kz</code>, и HTTPS настроится сразу. Версия 0.2.1; файлы и прошлые версии - на странице <a href="https://github.com/baibesh/auditbox-site/releases">выпусков</a>.</p>
+  <p>Вопросов команда не задаёт: ставит программу и базу и печатает ссылку. Администратор и первая система создаются в браузере.</p>
+  <div class="row">
+    <a class="button" href="guide.html">Руководство</a>
+    <a class="button quiet" href="guide.html#integrate">Как встроить в свою систему</a>
+  </div>
+
+  <h2 id="video">Как это выглядит</h2>
+  <video controls preload="metadata" poster="video/poster.jpg">
+    <source src="video/auditbox-install.mp4" type="video/mp4">
+  </video>
+  <p class="small" style="margin-top:10px">Одна минута: установка на сервере, мастер в браузере, журнал и настройки параметров.</p>
+
+  <h2>Что внутри</h2>
+  <ul>
+    <li><strong>Журнал, который нельзя переписать.</strong> Записи только добавляются; служба не может изменить их даже при взломе самой программы.</li>
+    <li><strong>По параметрам.</strong> На каждую изменённую настройку своя строка: «было» и «стало».</li>
+    <li><strong>Секреты скрыты.</strong> Ключи и пароли в журнал не попадают, остаётся только факт изменения.</li>
+    <li><strong>Поиск, фильтры, CSV.</strong> Кто менял лимит, что меняли за неделю, выгрузка для отчёта.</li>
+    <li><strong>Любая система.</strong> Одна точка приёма по HTTPS; для чужого формата данных есть скрипт преобразования.</li>
+  </ul>
+  <p class="small">Версия 0.2.2. Нужен сервер Linux; PostgreSQL установщик поставит сам.</p>
 </main>
 <footer>
   <span>AuditBox</span>
   <span>Разработчик: <a href="https://github.com/baibesh">Baibesh</a></span>
 </footer>
+<script src="copy.js"></script>
 </body>
 </html>

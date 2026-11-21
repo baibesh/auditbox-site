@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Руководство - AuditBox</title>
+<meta name="description" content="Как установить AuditBox, встроить отправку изменений в свою систему и настроить, какие параметры попадают в журнал.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <a class="mark" href="./">AuditBox</a>
+  <nav class="top"><a href="guide.html" aria-current="page">Руководство</a><a href="https://github.com/baibesh/auditbox-site/releases">Выпуски</a></nav>
+</header>
+<main>
+  <h1>Руководство</h1>
+  <p class="lead">От пустого сервера до первой записи в журнале: установка, вход, подключение вашей системы и настройка параметров.</p>
+  <ul class="toc">
+    <li><a href="#install">1. Установка</a></li>
+    <li><a href="#first-run">2. Первый вход</a></li>
+    <li><a href="#integrate">3. Как встроить код</a></li>
+    <li><a href="#parameters">4. Параметры</a></li>
+    <li><a href="#script">5. Если систему менять нельзя</a></li>
+    <li><a href="#https">6. Адрес и HTTPS</a></li>
+    <li><a href="#manage">7. Обновление и команды</a></li>
+  </ul>
+
+  <h2 id="video">Видео: одна минута</h2>
+  <video controls preload="metadata" poster="video/poster.jpg">
+    <source src="video/auditbox-install.mp4" type="video/mp4">
+  </video>
+
+  <h2 id="install">1. Установка</h2>
+  <p>На сервере Linux одна команда. Вопросов она не задаёт.</p>
+  <pre class="cmd"><code>curl -fsSL https://baibesh.github.io/auditbox-site/install.sh | sudo sh</code></pre>
+  <p>Что она делает сама:</p>
+  <ul>
+    <li>скачивает программу (один файл) и сверяет контрольную сумму;</li>
+    <li>ставит службу <code>auditbox</code> с автозапуском;</li>
+    <li>поднимает базу: ставит PostgreSQL, если его нет, или заводит отдельную базу в уже стоящем. Чужие базы не трогает;</li>
+    <li>выбирает свободный порт и запускает службу;</li>
+    <li>печатает ссылку, по которой установка завершается в браузере.</li>
+  </ul>
+  <p>Если у сервера есть имя, укажите его сразу, и HTTPS настроится в той же команде:</p>
+  <pre class="cmd"><code>curl -fsSL https://baibesh.github.io/auditbox-site/install.sh | sudo sh -s -- --domain audit.example.kz</code></pre>
+  <p class="note">Нужен Linux с systemd. PostgreSQL, nginx и сертификат команда ставит сама на Debian и Ubuntu.</p>
+
+  <h2 id="first-run">2. Первый вход</h2>
+  <p>Откройте ссылку, которую напечатала команда. В браузере мастер из двух шагов:</p>
+  <ol class="steps">
+    <li><strong>Администратор.</strong> Логин и пароль первого пользователя. Пароль можно сгенерировать кнопкой.</li>
+    <li><strong>Первая система.</strong> Название того, что будет присылать изменения, например CRM. В ответ мастер показывает ключ системы и две готовые строки для её настроек.</li>
+  </ol>
+  <p>Ключ показывается один раз. Ссылка одноразовая: после создания администратора она перестаёт работать. Новая ссылка, пока администратор не создан:</p>
+  <pre class="cmd"><code>sudo auditbox setup-link</code></pre>
+  <p class="note">Без имени сервера AuditBox слушает только сам сервер. Тогда команда печатает строку туннеля, которая запускается на вашем компьютере, и адрес вида <code>http://localhost:8190/setup/…</code>.</p>
+
+  <h2 id="integrate">3. Как встроить код</h2>
+  <p>Ваша система сообщает AuditBox о каждом сохранении настроек одним запросом. Считать, что именно изменилось, ей не нужно: она отправляет состояние <em>до</em> и <em>после</em>, а AuditBox сам сравнивает их, пишет по строке на каждый изменённый параметр и скрывает секреты.</p>
+
+  <h3>Три шага</h3>
+  <ol class="steps">
+    <li><strong>Положите адрес и ключ в настройки системы.</strong> Мастер выдаёт их готовыми строками:
+      <pre><code>AUDITBOX_URL=https://audit.example.kz
+AUDITBOX_TOKEN=abx_…</code></pre>
+    </li>
+    <li><strong>Найдите место, где система сохраняет настройки.</strong> Обычно это одна функция: «сохранить кампанию». Перед сохранением запомните прежнее состояние, после сохранения возьмите новое.</li>
+    <li><strong>Отправьте оба состояния в AuditBox</strong> вместе с тем, кто это сделал.</li>
+  </ol>
+
+  <h3>Запрос</h3>
+  <pre class="cmd"><code>curl -X POST "$AUDITBOX_URL/events" \
+  -H "Authorization: Bearer $AUDITBOX_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event_id": "5b1f6c1e-7d0a-4f0e-9a43-2f6a0c1d8e11",
+    "operation_id": "5b1f6c1e-7d0a-4f0e-9a43-2f6a0c1d8e11",
+    "occurred_at": "2026-11-21T08:14:05Z",
+    "entity_type": "campaign.sms",
+    "entity_id": "12345",
+    "action": "update",
+    "actor": { "id": "u-77", "type": "user", "display": "a.ivanov" },
+    "reason": "Перенос рассылки на вечер",
+    "before": { "status": "active", "schedule": { "start_time": "09:00" } },
+    "after":  { "status": "active", "schedule": { "start_time": "21:00" } }
+  }'</code></pre>
+
+  <table>
+    <tr><th>Поле</th><th>Что в нём</th></tr>
+    <tr><td><code>event_id</code></td><td>Уникальный номер события (UUID). Повтор с тем же номером второй раз не записывается.</td></tr>
+    <tr><td><code>operation_id</code></td><td>Номер операции (UUID). Одинаковый у событий одного действия, например массовой правки; иначе равен <code>event_id</code>.</td></tr>
+    <tr><td><code>occurred_at</code></td><td>Когда произошло изменение, в UTC.</td></tr>
+    <tr><td><code>entity_type</code>, <code>entity_id</code></td><td>Что изменили: тип объекта, как он задан в параметрах, и его номер.</td></tr>
+    <tr><td><code>action</code></td><td><code>create</code>, <code>update</code> или <code>delete</code>.</td></tr>
+    <tr><td><code>actor</code></td><td>Кто изменил: <code>id</code>, <code>type</code> (<code>user</code>, <code>system</code> или <code>api_token</code>) и имя для показа.</td></tr>
+    <tr><td><code>reason</code></td><td>Причина, если система её знает. Необязательно.</td></tr>
+    <tr><td><code>before</code>, <code>after</code></td><td>Объект целиком до и после. При создании нет <code>before</code>, при удалении нет <code>after</code>.</td></tr>
+  </table>
+
+  <h3>В коде</h3>
+  <p>Node.js:</p>
+  <pre class="cmd"><code>async function audit({ type, id, action, actor, before, after, reason }) {
+  const eventId = crypto.randomUUID();
+  const response = await fetch(process.env.AUDITBOX_URL + "/events", {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer " + process.env.AUDITBOX_TOKEN,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      event_id: eventId, operation_id: eventId,
+      occurred_at: new Date().toISOString(),
+      entity_type: type, entity_id: String(id), action, actor, reason, before, after,
+    }),
+  });
+  if (!response.ok) throw new Error("AuditBox: " + response.status);
+}
+
+// там, где сохраняется кампания
+const before = await campaigns.get(id);
+const after = await campaigns.update(id, changes);
+await audit({ type: "campaign.sms", id, action: "update", before, after,
+  actor: { id: user.id, type: "user", display: user.login } });</code></pre>
+
+  <p>Python:</p>
+  <pre class="cmd"><code>import os, uuid, datetime, requests
+
+def audit(type, id, action, actor, before=None, after=None, reason=None):
+    event_id = str(uuid.uuid4())
+    response = requests.post(
+        os.environ["AUDITBOX_URL"] + "/events",
+        headers={"Authorization": "Bearer " + os.environ["AUDITBOX_TOKEN"]},
+        json={
+            "event_id": event_id, "operation_id": event_id,
+            "occurred_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "entity_type": type, "entity_id": str(id), "action": action,
+            "actor": actor, "reason": reason, "before": before, "after": after,
+        },
+        timeout=5,
+    )
+    response.raise_for_status()</code></pre>
+
+  <p>PHP:</p>
+  <pre class="cmd"><code>function audit(string $type, string $id, string $action, array $actor, ?array $before, ?array $after): void {
+    $eventId = bin2hex(random_bytes(16));
+    $eventId = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split($eventId, 4));
+    $ch = curl_init(getenv('AUDITBOX_URL') . '/events');
+    curl_setopt_array($ch, [
+        CURLOPT_POST => true,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 5,
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . getenv('AUDITBOX_TOKEN'),
+            'Content-Type: application/json',
+        ],
+        CURLOPT_POSTFIELDS => json_encode([
+            'event_id' => $eventId, 'operation_id' => $eventId,
+            'occurred_at' => gmdate('Y-m-d\TH:i:s\Z'),
+            'entity_type' => $type, 'entity_id' => $id, 'action' => $action,
+            'actor' => $actor, 'before' => $before, 'after' => $after,
+        ]),
+    ]);
+    curl_exec($ch);
+    if (curl_getinfo($ch, CURLINFO_HTTP_CODE) >= 300) throw new RuntimeException('AuditBox refused the event');
+}</code></pre>
+
+  <h3>Ответы</h3>
+  <table>
+    <tr><th>Код</th><th>Что значит</th><th>Что делать</th></tr>
+    <tr><td><code>201</code></td><td>Записано. В ответе число изменённых параметров.</td><td>Готово.</td></tr>
+    <tr><td><code>200</code></td><td>Это событие уже записано раньше.</td><td>Готово: повтор безопасен.</td></tr>
+    <tr><td><code>401</code></td><td>Нет ключа или ключ неверный.</td><td>Проверить <code>AUDITBOX_TOKEN</code>.</td></tr>
+    <tr><td><code>400</code>, <code>422</code></td><td>Событие составлено неверно; в ответе причина.</td><td>Исправить данные.</td></tr>
+    <tr><td><code>5xx</code>, нет связи</td><td>AuditBox недоступен.</td><td>Повторить позже с тем же <code>event_id</code>.</td></tr>
+  </table>
+
+  <h3>Чтобы ни одно изменение не потерялось</h3>
+  <p>Если AuditBox в момент сохранения недоступен, событие не должно пропасть. Надёжная схема такая:</p>
+  <ul>
+    <li>в той же транзакции, что и само сохранение, система кладёт событие в свою таблицу-очередь;</li>
+    <li>фоновая задача отправляет события из очереди и удаляет их после ответа <code>201</code> или <code>200</code>;</li>
+    <li>повторная отправка безопасна: по <code>event_id</code> AuditBox узнаёт дубль.</li>
+  </ul>
+  <p>Почему событие не записалось, видно в админке: <strong>Настройки → Приём</strong>. Там каждый запрос и шаг, на котором он остановился.</p>
+
+  <h2 id="parameters">4. Параметры: что попадает в журнал</h2>
+  <p>В журнал пишутся не все поля объекта, а только те, что перечислены в параметрах. Настраивается это в админке: <strong>Настройки → Параметры → Изменить</strong>. Изменение действует сразу, перезапуск не нужен.</p>
+  <p>У каждого параметра четыре свойства:</p>
+  <table>
+    <tr><th>Свойство</th><th>Что это</th><th>Пример</th></tr>
+    <tr><td>Название</td><td>Как параметр подписан в журнале.</td><td>Время начала</td></tr>
+    <tr><td>Поле в данных</td><td>Где значение лежит в <code>before</code> и <code>after</code>. Вложенность через точку.</td><td><code>schedule.start_time</code></td></tr>
+    <tr><td>Группа</td><td>Заголовок, под которым параметр показан. Необязательно.</td><td>Расписание</td></tr>
+    <tr><td>Секрет</td><td>Значение не записывается, остаётся только факт изменения.</td><td>ключ провайдера</td></tr>
+  </table>
+  <p>Как поле в данных соответствует тому, что присылает система:</p>
+  <pre><code>"after": {
+  "status": "paused",                       →  status
+  "schedule": { "start_time": "21:00" },    →  schedule.start_time
+  "limits":   { "per_day": 20000 },         →  limits.per_day
+  "provider": { "api_key": "…" }            →  provider.api_key   (секрет)
+}</code></pre>
+  <p><strong>Тип объекта</strong> в параметрах должен совпадать с <code>entity_type</code> в событии, например <code>campaign.sms</code>. Событие с типом, которого нет в параметрах, AuditBox отклонит.</p>
+  <p class="note">Если убрать параметр, он перестанет записываться, а уже записанное останется. Пометка «секрет» скрывает значения с этого момента, а не в прошлых записях.</p>
+
+  <h2 id="script">5. Если систему менять нельзя</h2>
+  <p>Бывает, что система умеет только отдать свои данные как есть, например строку из таблицы изменений. Тогда она шлёт их на отдельный адрес, а короткий скрипт в AuditBox переводит их в событие. Скрипт задаётся в админке: <strong>Настройки → Источники → меню системы → Преобразование входа</strong>.</p>
+  <pre class="cmd"><code>function transform(input) {
+  if (input.tbl !== "campaigns") return null;   // не кампания: пропустить
+
+  return {
+    event_id: input.id,
+    operation_id: input.id,
+    occurred_at: input.ts,
+    entity_type: "campaign.sms",
+    entity_id: String(input.pk),
+    action: "update",
+    actor: { id: input.usr, type: "user" },
+    before: input.old,
+    after: input.new,
+  };
+}</code></pre>
+  <p>Там же есть консоль проверки: вставляете пример данных и сразу видите, какие строки появятся в журнале. В журнал при проверке ничего не пишется. Данные система отправляет на <code>POST /intake/&lt;идентификатор системы&gt;</code> с тем же ключом.</p>
+
+  <h2 id="https">6. Адрес и HTTPS</h2>
+  <p>Сразу после установки AuditBox слушает только сам сервер. Открыть его под именем с HTTPS можно одной командой: она получает сертификат и включает сайт в nginx.</p>
+  <pre class="cmd"><code>sudo auditbox https audit.example.kz</code></pre>
+  <p>Имя должно уже указывать на этот сервер. Закрыть обратно:</p>
+  <pre class="cmd"><code>sudo auditbox https off</code></pre>
+
+  <h2 id="manage">7. Обновление и команды</h2>
+  <p>Обновление — та же команда, что при установке. На сервере, где AuditBox уже стоит, она заменяет программу, обновляет таблицы и перезапускает службу.</p>
+  <table>
+    <tr><th>Что</th><th>Команда</th></tr>
+    <tr><td>Новая ссылка для завершения установки</td><td><code>sudo auditbox setup-link</code></td></tr>
+    <tr><td>Журнал службы</td><td><code>journalctl -u auditbox -n 100</code></td></tr>
+    <tr><td>Цела ли цепочка журнала</td><td><code>sudo auditbox --config /etc/auditbox/auditbox.toml verify</code></td></tr>
+    <tr><td>Новый администратор, если пароль утерян</td><td><code>sudo auditbox --config /etc/auditbox/auditbox.toml user create &lt;логин&gt; --role admin</code></td></tr>
+    <tr><td>Удалить программу (настройки и база остаются)</td><td><code>sudo auditbox uninstall</code></td></tr>
+  </table>
+  <p>Резервная копия AuditBox — это копия его базы: <code>pg_dump auditbox</code>. Файлов данных у программы нет.</p>
+</main>
+<footer>
+  <span>AuditBox</span>
+  <span>Разработчик: <a href="https://github.com/baibesh">Baibesh</a></span>
+</footer>
+<script src="copy.js"></script>
+</body>
+</html>
